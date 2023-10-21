@@ -102,6 +102,10 @@ static struct serdev_device_driver serdev_echo_driver = {
 static int serdev_echo_recv(struct serdev_device *serdev, const unsigned char *buffer, size_t size) {
 	printk("serdev_echo - Received %ld bytes with \"%s\"\n", size, buffer);
 
+	if(global_buffer_end >= 255) {
+		return size;
+	}
+
 	char *last_char_ptr = buffer + size - 1;
 	char last_char = (char) (*last_char_ptr);
 
