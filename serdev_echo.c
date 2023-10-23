@@ -14,8 +14,9 @@ MODULE_LICENSE("GPL");
 
 /* Buffer for data */
 static char global_buffer[255];
-static int global_buffer_end = 0;
-static int last_read_buffer_end = 0;
+static int global_buffer_head = 0;
+static int global_buffer_size = 0;
+static int last_global_buffer_size = 0;
 
 /* Variables for device and device class */
 static dev_t my_device_nr;
@@ -32,17 +33,17 @@ static ssize_t driver_read(struct file *File, char *user_buffer, size_t count, l
 {
 	printk("serdev_echo file - read was called!\n");
 
-	if (global_buffer_end == last_read_buffer_end)
+	if (global_buffer_size == last_global_buffer_size)
 	{
 		return 0;
 	}
 
 	/* Copy data to user */
-	copy_to_user(user_buffer, global_buffer, global_buffer_end);
+	copy_to_user(user_buffer, global_buffer, global_buffer_size);
 
-	last_read_buffer_end = global_buffer_end;
+	last_global_buffer_size = global_buffer_size;
 
-	return global_buffer_end;
+	return global_buffer_size;
 }
 
 /**
@@ -52,7 +53,7 @@ static int driver_open(struct inode *device_file, struct file *instance)
 {
 	printk("serdev_echo file - open was called!\n");
 
-	last_read_buffer_end = 0;
+	last_global_buffer_size = 0;
 
 	return 0;
 }
@@ -100,17 +101,22 @@ static int serdev_echo_recv(struct serdev_device *serdev, const unsigned char *b
 {
 	printk("serdev_echo - Received %ld bytes with \"%s\"\n", size, buffer);
 
-	if (global_buffer_end >= 255)
-	{
-		global_buffer_end = 0;
-	}
-
 	char *last_char_ptr = buffer + size - 1;
 	char last_char = (char)(*last_char_ptr);
 
-	global_buffer[global_buffer_end] = last_char;
+	if (global_buffer_size >= 255)
+	{
+		global_buffer_head = 0;
+	}
 
-	global_buffer_end++;
+	global_buffer[global_buffer_head] = last_char;
+
+	if (global_buffer_size == global_buffer_head)
+	{
+		global_buffer_size++;
+	}
+
+	global_buffer_head++;
 
 	return size;
 }
