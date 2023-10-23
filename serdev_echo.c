@@ -104,7 +104,7 @@ static int serdev_echo_recv(struct serdev_device *serdev, const unsigned char *b
 	char *last_char_ptr = buffer + size - 1;
 	char last_char = (char)(*last_char_ptr);
 
-	if (global_buffer_size >= 255)
+	if (global_buffer_head >= 255)
 	{
 		global_buffer_head = 0;
 	}
